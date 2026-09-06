@@ -12,6 +12,8 @@ class Book extends Model
         'publisher',
         'year',
         'description',
+        'cover',
+        'stock',
     ];
 
     protected $table = 'books';
