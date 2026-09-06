@@ -11,6 +11,17 @@
         <x-sidebar/>
         <div class="flex flex-col p-12 ml-[15%]">
             <h1 class="mb-4 text-[36px] font-semibold text-[#121212]">Tambah Buku</h1>
+            @if ($errors->any())
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                    <strong class="font-bold">Error!</strong>
+                    <span class="block sm:inline">Please fix the following errors:</span>
+                    <ul class="mt-2 list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <form action="{{ route('books.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-5">
                 @csrf
                 <div class="flex flex-col gap-2">

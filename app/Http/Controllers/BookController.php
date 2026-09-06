@@ -18,22 +18,34 @@ class BookController extends Controller
             'sort_by' => 'nullable|string|in:title,author,publisher,year,description,stock',
             'sort_order' => 'nullable|string|in:asc,desc',
             'search' => 'nullable|string',
+            'year' => 'nullable|string'
         ]);
 
         $sortBy = $validated['sort_by'] ?? 'title';
         $sortOrder = $validated['sort_order'] ?? 'asc';
         $search = $validated['search'] ?? '';
- 
-        $books = Book::where('title', 'like', "%$search%")
-            ->orWhere('author', 'like', "%$search%")
-            ->orWhere('publisher', 'like', "%$search%")
-            ->orWhere('year', 'like', "%$search%")
-            ->orWhere('description', 'like', "%$search%")
-            ->orWhere('stock', 'like', "%$search%")
-            ->orderBy($sortBy, $sortOrder)
-            ->get();
+        $year = $validated['year'] ?? '';
 
-        return view('books.index', ['books' => $books]);
+        $books = Book::when($year, function ($query, $year) {
+                return $query->where('year', $year);
+            })
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($query) use ($search) {
+                    $query->where('title', 'like', "%$search%")
+                        ->orWhere('author', 'like', "%$search%")
+                        ->orWhere('publisher', 'like', "%$search%")
+                        ->orWhere('description', 'like', "%$search%")
+                        ->orWhere('stock', 'like', "%$search%");
+                });
+            })
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate(3)
+            ->withQueryString();
+        
+        // mengambil daftar tahun yang unik dari buku untuk filter
+        $years = Book::select('year')->distinct()->orderBy('year', 'desc')->pluck('year');
+
+        return view('books.index', ['books' => $books, 'years' => $years]);
     }
 
     /**
