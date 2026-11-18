@@ -7,13 +7,75 @@ use App\Models\Subject;
 
 class SubjectController extends Controller
 {
-    //api
+    
+public function index(Request $request)
+{
+    // Validation
+    $validated = $request->validate([
+        // Searching
+        'search' => 'nullable|string',
 
-    public function index()
-    {
-        $subjects = Subject::all();
-        return response()->json($subjects);
+        // Filtering
+        'category' => 'nullable|string',
+        'status' => 'nullable|string',
+
+        // Sorting
+        'sort_by' => 'nullable|in:id,subject_name,category,status,created_at,updated_at',
+        'sort_direction' => 'nullable|in:asc,desc',
+
+        // Pagination
+        'page' => 'nullable|integer|min:1',
+        'per_page' => 'nullable|integer|min:1',
+    ]);
+
+    // Get parameters with default values
+    $search = trim($request->input('search', ''));
+    $category = $request->input('category', '');
+    $status = $request->input('status', '');
+
+    $sortBy = $request->input('sort_by') ?: 'id';
+    $sortDirection = $request->input('sort_direction') ?: 'asc';
+
+    $page = max(1, (int) ($request->input('page') ?: 1));
+    $per_page = max(1, (int) ($request->input('per_page') ?: 5));
+
+    // Base query
+    $query = Subject::query();
+
+    // Searching
+    if ($search !== '') {
+        $query->where(function ($searchQuery) use ($search) {
+            $searchQuery->where('subject_name', 'like', "%{$search}%")
+                ->orWhere('mentor_name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhere('duration', 'like', "%{$search}%");
+        });
     }
+
+    // Filtering
+    if ($category !== '') {
+        $query->where('category', $category);
+    }
+
+    if ($status !== '') {
+        $query->where('status', $status);
+    }
+
+    // Sorting
+    $query->orderBy($sortBy, $sortDirection);
+
+    if ($sortBy !== 'id') {
+        $query->orderBy('id', 'asc');
+    }
+
+    // Pagination
+    $subjects = $query
+        ->paginate($per_page, ['*'], 'page', $page)
+        ->withQueryString();
+
+    // Response
+    return response()->json($subjects);
+}
 
     public function store(Request $request)
     {
@@ -22,6 +84,8 @@ class SubjectController extends Controller
             'mentor_name' => 'required',
             'description' => 'required',
             'duration' => 'required',
+            'category' => 'required',
+            'status' => 'required',
         ]);
 
         $subject = Subject::create($validate);
@@ -56,6 +120,8 @@ class SubjectController extends Controller
             'mentor_name' => 'required',
             'description' => 'required',
             'duration' => 'required',
+            'category' => 'required',
+            'status' => 'required',
         ]);
         
         

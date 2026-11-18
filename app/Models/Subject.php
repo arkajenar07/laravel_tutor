@@ -11,7 +11,9 @@ class Subject extends Model
         'mentor_name',
         'description',
         'duration',
+        'category',
+        'status',
     ];
 
-    protected $table = 'subject';
+    protected $table = 'subjects';
 }
